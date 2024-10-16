@@ -15,7 +15,7 @@ jobs:
             NEW_REPO_NAME="mgm-$REPO_NAME"
 
             gh api -X PATCH \ 
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }} \ 
+              -H "Authorization: token ${{ secrets.GIT_TOKEN }} \ 
               -H "Accept: application/vnd.github.v3+json" \
               "/repos/${{ github.repository_owner }}/$REPO_NAME" \
               -f name="$NEW_REPO_NAME"
