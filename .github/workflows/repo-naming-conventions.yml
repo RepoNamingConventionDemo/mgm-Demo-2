@@ -1,27 +1,27 @@
----
-name: Enforce Repository Naming Convention
-on: 
-  repository_dispatch:
-    types: [repository created]
+name: Repo Naming Convention
+
+# Trigger the workflow 
+on:
+  schedule:
+    - cron: '*/5 * * * *' 
+  
+  # Allow manual triggers
+  workflow_dispatch:
+
 jobs:
-  check-repo-name:
+  run-script:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: check if repository name follows convention
-        run: |
-          REPO_NAME="${{github.event.repository.name}}"
-          if [[ ! "$REPO_NAME" == mgm-* ]]; then 
-            echo "Repository $REPO_NAME does not follow naming convention. Renaming..."
-            NEW_REPO_NAME="mgm-$REPO_NAME"
-
-            gh api -X PATCH \ 
-              -H "Authorization: token ${{ secrets.GIT_TOKEN }} \ 
-              -H "Accept: application/vnd.github.v3+json" \
-              "/repos/${{ github.repository_owner }}/$REPO_NAME" \
-              -f name="$NEW_REPO_NAME"
-          else
-            echo "Repository $REPO_NAME follows the naming convention"
-          fi
-
-
-          
+    # Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    # Run the naming convention script
+    - name: Run Repo Naming Convention Script
+      run: |
+        chmod +x ./scripts/repo-naming-convention-1.sh
+        ./scripts/repo-naming-convention-1.sh
+      env:
+        GIT_TOKEN: ${{ secrets.GIT_TOKEN }}  # Use GitHub's default token
+        ORG_NAME: RepoNamingConventionDemo  # Replace with your organization name
