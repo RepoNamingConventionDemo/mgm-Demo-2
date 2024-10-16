@@ -36,14 +36,14 @@ RESPONSE=$(curl -s -H "Authorization: token $GIT_TOKEN" \
 
 # Check if the response is valid JSON
 if echo "$RESPONSE" | jq -e . > /dev/null 2>&1; then
-    # If it's valid JSON, parse repository names
+    # If it's valid JSON Response, parse repository names
     REPOS=$(echo "$RESPONSE" | jq -r '.[].name')
 else
     echo "Error: Failed to fetch repositories. Response: $RESPONSE"
-    exit 1  # Exit the script if there is an error fetching repositories
+    exit 1 
 fi
 
-# Loop through each repository and attempt to rename it
+# Loop through each repository and rename it with mgm- prefix
 for REPO in $REPOS; do
     rename_repo "$REPO"
 done
