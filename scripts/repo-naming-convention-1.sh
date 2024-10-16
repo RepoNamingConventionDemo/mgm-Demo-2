@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # GitHub organization name
-ORG_NAME="RepoNamingConventionDemo"  # Replace with your organization name
-# GitHub token with necessary permissions to list and modify repositories
-GIT_TOKEN="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"  # Replace with your GitHub Personal Access Token
+ORG_NAME="RepoNamingConventionDemo"  # Provide organization name
+
 
 # Function to rename the repository by adding 'mgm-' prefix
 rename_repo() {
