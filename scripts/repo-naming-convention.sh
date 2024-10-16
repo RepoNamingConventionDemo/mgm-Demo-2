@@ -16,11 +16,16 @@ rename_repo() {
         echo "Renaming '$REPO_NAME' to '$NEW_REPO_NAME'..."
 
         # Call GitHub API to rename the repository
-        RESPONSE=$(curl -s -X PATCH \
-        -H "Authorization: token $GIT_TOKEN" \
-        -H "Accept: application/vnd.github.v3+json" \
-        -d "{\"name\": \"$NEW_REPO_NAME\"}" \
-        "https://api.github.com/repos/$ORG_NAME/$REPO_NAME")
+        #RESPONSE=$(curl -s -X PATCH \
+        #-H "Authorization: token $GIT_TOKEN" \
+        #-H "Accept: application/vnd.github.v3+json" \
+        #-d "{\"name\": \"$NEW_REPO_NAME\"}" \
+        #"https://api.github.com/repos/$ORG_NAME/$REPO_NAME")
+
+        RESPONSE=$(curl -s -H "Authorization: token $GIT_TOKEN" \
+           "https://api.github.com/orgs/$ORG_NAME/repos")
+            echo "API Response: $RESPONSE"
+
 
         # Check if the response contains the new repository name
         if echo "$RESPONSE" | grep -q "$NEW_REPO_NAME"; then
