@@ -24,9 +24,16 @@ jobs:
     needs: check-repo-name
     if: success()  # Only run if the naming convention is followed
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up GitHub CLI
+        run: |
+          sudo apt update
+          sudo apt install gh
+
       - name: Create Repository
-        uses: peter-evans/create-repo@v2
-        with:
-          token: ${{ secrets.GIT_TOKEN }}
-          name: ${{ github.event.issue.title }}
-          description: "Repository created for ${{ github.event.issue.title }}"
+        run: |
+          gh repo create "${{ github.event.issue.title }}" --description "Repository created for ${{ github.event.issue.title }}" --private --confirm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
