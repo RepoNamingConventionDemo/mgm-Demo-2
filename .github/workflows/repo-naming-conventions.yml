@@ -2,8 +2,6 @@ name: Repo Naming Convention
 
 # Trigger the workflow 
 on:
-  schedule: 
-  
   # Allow manual triggers
   workflow_dispatch:
 
