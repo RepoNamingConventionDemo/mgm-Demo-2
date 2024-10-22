@@ -25,8 +25,8 @@ jobs:
     if: success()  # Only run if the naming convention is followed
     steps:
       - name: Create Repository
-        uses: peter-evans/create-or-update-repo@v2
+        uses: peter-evans/create-repo@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GIT_TOKEN }}
           name: ${{ github.event.issue.title }}
           description: "Repository created for ${{ github.event.issue.title }}"
