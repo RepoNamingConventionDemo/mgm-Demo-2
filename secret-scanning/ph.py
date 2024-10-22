@@ -5,7 +5,7 @@ import logging
 # Set constants
 GITHUB_API_URL = 'https://api.github.com'
 GITHUB_TOKEN="gh_tkdsfn4gkhebrkgbekhrgberg"
-
+Azure_TOKEN="db_jdjfdjhdjghfjhjgfjghfjghfjgh"
 def is_secret_scanning_enabled(org, repo, pat):
     """Check if secret scanning is enabled for the repository."""
     url = f"{GITHUB_API_URL}/repos/{org}/{repo}"
