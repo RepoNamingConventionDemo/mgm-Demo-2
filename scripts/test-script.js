@@ -1,7 +1,7 @@
 // secretsTest.js
 
-// Intentionally exposing a secret token
-const secretToken = "ghp_16cHn0w..."; // Example GitHub token
+
+const GITHUB_Token = "ghp_16cHn0w13234"; 
 
 function authenticate() {
     console.log(`Authenticating with token: ${secretToken}`);
