@@ -34,6 +34,6 @@ jobs:
 
       - name: Create Repository
         run: |
-          gh repo create "${{ github.event.issue.title }}" --description "Repository created for ${{ github.event.issue.title }}" --private
+          gh repo create "${{ github.event.issue.title }}" --description "Repository created for ${{ github.event.issue.title }}" --public
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
