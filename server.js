@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-const GITHUB_TOKEN = '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';
+const GITHUB_TOKEN = 'process.env.GIT_TOKEN';
 const ORGANIZATION_NAME = 'RepoNamingConventionDemo';
 
 app.post('/webhook', async (req, res) => {
