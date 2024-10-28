@@ -1,0 +1,39 @@
+name: Create Repository in Organization
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        description: 'Name of the repository to create'
+        required: true
+      description:
+        description: 'Description of the repository'
+        required: false
+      private:
+        description: 'Set repository as private (true or false)'
+        required: true
+        default: 'true'
+
+jobs:
+  validate-and-create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate repository name
+        id: validate_name
+        run: |
+          if [[ "${{ github.event.inputs.repo_name }}" != mgm-* ]]; then
+            echo "Error: Repository name must start with 'mgm-'."
+            exit 1
+          fi
+          echo "Repository name is valid."
+
+      - name: Create repository
+        if: steps.validate_name.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/RepoNamingConventionDemo/repos \
+            -d '{"name": "${{ github.event.inputs.repo_name }}", "description": "${{ github.event.inputs.description }}", "private": ${{ github.event.inputs.private }}}'
