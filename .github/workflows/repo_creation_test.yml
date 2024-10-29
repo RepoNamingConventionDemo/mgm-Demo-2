@@ -24,7 +24,15 @@ on:
       gitignore_template:
         description: 'Gitignore template for the repository'
         required: false
-        default: ''  # e.g., 'Python' or 'Node'
+        type: choice
+        options:
+          - 'None'
+          - 'Python'
+          - 'Node'
+          - 'Java'
+          - 'C++'
+          - 'Go'
+          - 'Ruby'
 
 jobs:
   validate-and-create-repo:
