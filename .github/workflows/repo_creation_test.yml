@@ -1,4 +1,4 @@
-name: Create Repository in Organization
+name: Create Repository in Organization Test
 
 on:
   workflow_dispatch:
