@@ -60,5 +60,5 @@ jobs:
           curl -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/orgs/YOUR_ORG/repos \
+            https://api.github.com/orgs/${{ vars.ORG_NAME }}/repos \
             -d "$payload"
