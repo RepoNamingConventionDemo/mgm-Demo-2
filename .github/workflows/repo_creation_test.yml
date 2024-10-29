@@ -1,0 +1,64 @@
+name: Create Repository in Organization
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        description: 'Name of the repository to create'
+        required: true
+      description:
+        description: 'Description of the repository'
+        required: false
+      private:
+        description: 'Set repository as private (true or false)'
+        required: true
+        default: 'true'
+      add_readme:
+        description: 'Add a README file (true or false)'
+        required: false
+        default: 'false'
+      license_template:
+        description: 'License template for the repository'
+        required: false
+        default: ''  # e.g., 'mit' or 'apache-2.0'
+      gitignore_template:
+        description: 'Gitignore template for the repository'
+        required: false
+        default: ''  # e.g., 'Python' or 'Node'
+
+jobs:
+  validate-and-create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate repository name
+        id: validate_name
+        env:
+          REPO_PREFIX: ${{ vars.REPO_PREFIX }}
+        run: |
+          if [[ "${{ github.event.inputs.repo_name }}" != "${REPO_PREFIX}"* ]]; then
+            echo "Error: Repository name must start with '${REPO_PREFIX}'."
+            exit 1
+          fi
+          echo "Repository name is valid."
+
+      - name: Create repository
+        if: steps.validate_name.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          # Prepare the JSON payload
+          payload=$(jq -n \
+            --arg name "${{ github.event.inputs.repo_name }}" \
+            --arg description "${{ github.event.inputs.description }}" \
+            --argjson private "${{ github.event.inputs.private }}" \
+            --argjson auto_init "${{ github.event.inputs.add_readme }}" \
+            --arg license_template "${{ github.event.inputs.license_template }}" \
+            --arg gitignore_template "${{ github.event.inputs.gitignore_template }}" \
+            '{name: $name, description: $description, private: $private, auto_init: $auto_init, license_template: $license_template, gitignore_template: $gitignore_template}')
+
+          # Send the request to create the repository
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/YOUR_ORG/repos \
+            -d "$payload"
