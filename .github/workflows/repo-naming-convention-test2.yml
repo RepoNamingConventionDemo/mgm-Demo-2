@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Specify whether to create a new repository or import an existing one.'
+        description: 'Select an action: create a new repository or import an existing one.'
         required: true
         default: 'create'
         options:
