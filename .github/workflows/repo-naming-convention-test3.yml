@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       repo_name:
-        description: 'Name of the repository to create'
+        description: 'Name of the repository to create. Must start with the specified prefix.'
         required: true
       description:
         description: 'Description of the repository'
@@ -12,16 +12,25 @@ on:
       private:
         description: 'Set repository as private (true or false)'
         required: true
-        default: 'true'
+        type: choice
+        options:
+          - true
+          - false
       add_readme:
-        description: 'Add a README file (true or false)'
+        description: |
+          'Add a README file (true or false). 
+          If true, a README file will be initialized in the repository. 
+          This is where you can write a long description for your project. Learn more about READMEs: https://docs.github.com/github/creating-cloning-and-archiving-repositories/about-readmes
         required: false
         type: choice
         options:
           - true
           - false
       license_template:
-        description: 'License template for the repository'
+        description: |
+          'License template for the repository. 
+          Select a license or choose "None" for no license. 
+          A license tells others what they can and can't do with your code. Learn more about licenses: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository
         required: false
         type: choice
         options:
@@ -30,7 +39,10 @@ on:
           - gpl-3.0
           - None
       gitignore_template:
-        description: 'Gitignore template for the repository'
+        description: |
+          'Gitignore template for the repository. 
+          Select a language or framework-specific gitignore template, or choose "None" for no template. 
+          Choose which files not to track from a list of templates. Learn more about ignoring files: https://docs.github.com/github/using-git/ignoring-files
         required: false
         type: choice
         options:
@@ -39,16 +51,17 @@ on:
           - Java
           - C#
           - None
+      branch_info:
+        description: |
+          'This will set "main" as the default branch for the new repository. 
+          To change the default branch name, update it in RepoNamingConventionDemo's settings: 
+          https://github.com/organizations/RepoNamingConventionDemo/settings/repository-defaults
+        
 
 jobs:
   validate-and-create-repo:
     runs-on: ubuntu-latest
     steps:
-      - name: Display default branch information
-        run: |
-          echo "This will set 'main' as the default branch for the new repository."
-          echo "To change the default branch, update the organization settings: https://github.com/organizations/YOUR_ORG/settings/repository-defaults"
-
       - name: Validate repository name
         id: validate_name
         env:
@@ -64,9 +77,8 @@ jobs:
         id: validate_license
         if: steps.validate_name.outcome == 'success'
         run: |
-          if [[ "${{ github.event.inputs.license_template }}" != "none" ]]; then
+          if [[ "${{ github.event.inputs.license_template }}" != "None" ]]; then
             response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/licenses/${{ github.event.inputs.license_template }})
-            echo $response
             if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
               echo "Error: Invalid license template."
               exit 1
@@ -78,7 +90,7 @@ jobs:
         id: validate_gitignore
         if: steps.validate_license.outcome == 'success'
         run: |
-          if [[ "${{ github.event.inputs.gitignore_template }}" != "none" ]]; then
+          if [[ "${{ github.event.inputs.gitignore_template }}" != "None" ]]; then
             response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/gitignore/templates/${{ github.event.inputs.gitignore_template }})
             if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
               echo "Error: Invalid gitignore template."
@@ -100,7 +112,14 @@ jobs:
             --argjson auto_init "${{ github.event.inputs.add_readme }}" \
             --arg license_template "${{ github.event.inputs.license_template }}" \
             --arg gitignore_template "${{ github.event.inputs.gitignore_template }}" \
-            '{name: $name, description: $description, private: $private, auto_init: $auto_init, license_template: $license_template, gitignore_template: $gitignore_template}')
+            '{
+              name: $name,
+              description: $description,
+              private: $private,
+              auto_init: $auto_init,
+              license_template: ($license_template != "None" ? $license_template : null),
+              gitignore_template: ($gitignore_template != "None" ? $gitignore_template : null)
+            }')
 
           # Send the request to create the repository
           curl -X POST \
