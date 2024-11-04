@@ -28,7 +28,7 @@ on:
           - mit
           - apache-2.0
           - gpl-3.0
-          - none
+          - None
       gitignore_template:
         description: 'Gitignore template for the repository'
         required: false
@@ -38,7 +38,7 @@ on:
           - Python
           - Java
           - C#
-          - none
+          - None
 
 jobs:
   validate-and-create-repo:
