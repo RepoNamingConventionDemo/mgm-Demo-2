@@ -1,0 +1,128 @@
+name: Create Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        description: 'Name of the repository to create. Must start with the specified prefix.'
+        required: true
+      description:
+        description: 'Description of the repository'
+        required: false
+      private:
+        description: 'Set repository as private (true or false)'
+        required: true
+        type: choice
+        options:
+          - true
+          - false
+      add_readme:
+        description: |
+          'Add a README file (true or false). 
+          If true, a README file will be initialized in the repository. 
+          This is where you can write a long description for your project. Learn more about READMEs: https://docs.github.com/github/creating-cloning-and-archiving-repositories/about-readmes'
+        required: false
+        type: choice
+        options:
+          - true
+          - false
+      license_template:
+        description: |
+          'License template for the repository. 
+          Select a license or choose "None" for no license. 
+          A license tells others what they can and can't do with your code. Learn more about licenses: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository'
+        required: false
+        type: choice
+        options:
+          - mit
+          - apache-2.0
+          - gpl-3.0
+          - None
+      gitignore_template:
+        description: |
+          'Gitignore template for the repository. 
+          Select a language or framework-specific gitignore template, or choose "None" for no template. 
+          Choose which files not to track from a list of templates. Learn more about ignoring files: https://docs.github.com/github/using-git/ignoring-files'
+        required: false
+        type: choice
+        options:
+          - Node
+          - Python
+          - Java
+          - C#
+          - None
+
+jobs:
+  validate-and-create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Validate repository name
+        id: validate_name
+        env:
+          REPO_PREFIX: ${{ vars.REPO_PREFIX }}
+        run: |
+          if [[ "${{ github.event.inputs.repo_name }}" != "${REPO_PREFIX}"* ]]; then
+            echo "Error: Repository name must start with '${REPO_PREFIX}'."
+            exit 1
+          fi
+          echo "Repository name is valid."
+
+      - name: Validate license template
+        id: validate_license
+        if: steps.validate_name.outcome == 'success'
+        run: |
+          if [[ "${{ github.event.inputs.license_template }}" != "None" ]]; then
+            response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/licenses/${{ github.event.inputs.license_template }})
+            if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+              echo "Error: Invalid license template."
+              exit 1
+            fi
+          fi
+          echo "License template is valid or not provided."
+
+      - name: Validate gitignore template
+        id: validate_gitignore
+        if: steps.validate_license.outcome == 'success'
+        run: |
+          if [[ "${{ github.event.inputs.gitignore_template }}" != "None" ]]; then
+            response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/gitignore/templates/${{ github.event.inputs.gitignore_template }})
+            if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+              echo "Error: Invalid gitignore template."
+              exit 1
+            fi
+          fi
+          echo "Gitignore template is valid or not provided."
+
+      - name: Create repository
+        if: steps.validate_gitignore.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          # Prepare the JSON payload
+          payload=$(jq -n \
+            --arg name "${{ github.event.inputs.repo_name }}" \
+            --arg description "${{ github.event.inputs.description }}" \
+            --argjson private "${{ github.event.inputs.private }}" \
+            --argjson auto_init "${{ github.event.inputs.add_readme }}" \
+            --arg license_template "${{ github.event.inputs.license_template }}" \
+            --arg gitignore_template "${{ github.event.inputs.gitignore_template }}" \
+            '{
+              name: $name,
+              description: $description,
+              private: $private,
+              auto_init: $auto_init,
+              license_template: ($license_template == "None" ? null : $license_template),
+              gitignore_template: ($gitignore_template == "None" ? null : $gitignore_template)
+            }')
+
+          # Send the request to create the repository
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/${{ vars.ORG_NAME }}/repos \
+            -d "$payload"
