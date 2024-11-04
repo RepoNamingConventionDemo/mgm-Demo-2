@@ -41,8 +41,34 @@ jobs:
           fi
           echo "Repository name is valid."
 
-      - name: Create repository
+      - name: Validate license template
+        id: validate_license
         if: steps.validate_name.outcome == 'success'
+        run: |
+          if [[ -n "${{ github.event.inputs.license_template }}" ]]; then
+            response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/licenses/${{ github.event.inputs.license_template }})
+            if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+              echo "Error: Invalid license template."
+              exit 1
+            fi
+          fi
+          echo "License template is valid or not provided."
+
+      - name: Validate gitignore template
+        id: validate_gitignore
+        if: steps.validate_license.outcome == 'success'
+        run: |
+          if [[ -n "${{ github.event.inputs.gitignore_template }}" ]]; then
+            response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/gitignore/templates/${{ github.event.inputs.gitignore_template }})
+            if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+              echo "Error: Invalid gitignore template."
+              exit 1
+            fi
+          fi
+          echo "Gitignore template is valid or not provided."
+
+      - name: Create repository
+        if: steps.validate_gitignore.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
