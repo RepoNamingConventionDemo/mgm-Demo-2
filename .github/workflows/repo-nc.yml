@@ -1,0 +1,90 @@
+name: Create Repository in Organization Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        description: 'Name of the repository to create (must start with `${{ vars.REPO_PREFIX }}`)'
+        required: true
+      description:
+        description: 'Description of the repository (optional)'
+        required: false
+      private:
+        description: 'Set repository as private (true or false). Learn more: [Creating a private repository](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-new-repository#creating-a-private-repository)'
+        required: true
+        default: 'true'
+      add_readme:
+        description: 'Add a README file (true or false). Learn more: [About readme files](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-readme-files)'
+        required: false
+        default: 'false'
+      license_template:
+        description: 'License template for the repository. Learn more: [Choosing a license](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/licensing-a-repository#choosing-a-license)'
+        required: false
+        default: ''
+      gitignore_template:
+        description: 'Gitignore template for the repository. Learn more: [Creating a .gitignore file](https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/ignoring-files#ignoring-files)'
+        required: false
+        default: ''
+
+jobs:
+  validate-and-create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate repository name
+        id: validate_name
+        env:
+          REPO_PREFIX: ${{ vars.REPO_PREFIX }}
+        run: |
+          if [[ "${{ github.event.inputs.repo_name }}" != "${REPO_PREFIX}"* ]]; then
+            echo "Error: Repository name must start with '${REPO_PREFIX}'."
+            exit 1
+          fi
+          echo "Repository name is valid."
+
+      - name: Validate license template
+        id: validate_license
+        if: steps.validate_name.outcome == 'success'
+        run: |
+          if [[ -n "${{ github.event.inputs.license_template }}" ]]; then
+            response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/licenses/${{ github.event.inputs.license_template }})
+            if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+              echo "Error: Invalid license template."
+              exit 1
+            fi
+          fi
+          echo "License template is valid or not provided."
+
+      - name: Validate gitignore template
+        id: validate_gitignore
+        if: steps.validate_license.outcome == 'success'
+        run: |
+          if [[ -n "${{ github.event.inputs.gitignore_template }}" ]]; then
+            response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/gitignore/templates/${{ github.event.inputs.gitignore_template }})
+            if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+              echo "Error: Invalid gitignore template."
+              exit 1
+            fi
+          fi
+          echo "Gitignore template is valid or not provided."
+
+      - name: Create repository
+        if: steps.validate_gitignore.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          # Prepare the JSON payload
+          payload=$(jq -n \
+            --arg name "${{ github.event.inputs.repo_name }}" \
+            --arg description "${{ github.event.inputs.description }}" \
+            --argjson private "${{ github.event.inputs.private }}" \
+            --argjson auto_init "${{ github.event.inputs.add_readme }}" \
+            --arg license_template "${{ github.event.inputs.license_template }}" \
+            --arg gitignore_template "${{ github.event.inputs.gitignore_template }}" \
+            '{name: $name, description: $description, private: $private, auto_init: $auto_init, license_template: $license_template, gitignore_template: $gitignore_template}')
+
+          # Send the request to create the repository
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/${{ vars.ORG_NAME }}/repos \
+            -d "$payload"
