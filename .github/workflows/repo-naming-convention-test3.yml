@@ -18,7 +18,7 @@ on:
           - false
       add_readme:
         description: |
-          'Add a README file (true or false). 
+          Add a README file (true or false). 
           If true, a README file will be initialized in the repository. 
           This is where you can write a long description for your project. Learn more about READMEs: https://docs.github.com/github/creating-cloning-and-archiving-repositories/about-readmes
         required: false
@@ -28,7 +28,7 @@ on:
           - false
       license_template:
         description: |
-          'License template for the repository. 
+          License template for the repository. 
           Select a license or choose "None" for no license. 
           A license tells others what they can and can't do with your code. Learn more about licenses: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository
         required: false
@@ -40,7 +40,7 @@ on:
           - None
       gitignore_template:
         description: |
-          'Gitignore template for the repository. 
+          Gitignore template for the repository. 
           Select a language or framework-specific gitignore template, or choose "None" for no template. 
           Choose which files not to track from a list of templates. Learn more about ignoring files: https://docs.github.com/github/using-git/ignoring-files
         required: false
@@ -51,17 +51,16 @@ on:
           - Java
           - C#
           - None
-      branch_info:
-        description: |
-          'This will set "main" as the default branch for the new repository. 
-          To change the default branch name, update it in RepoNamingConventionDemo's settings: 
-          https://github.com/organizations/RepoNamingConventionDemo/settings/repository-defaults
-        
 
 jobs:
   validate-and-create-repo:
     runs-on: ubuntu-latest
     steps:
+      - name: Display Branch Information
+        run: |
+          echo "This will set 'main' as the default branch for the new repository."
+          echo "To change the default branch name, update it in RepoNamingConventionDemo's settings: https://github.com/organizations/RepoNamingConventionDemo/settings/repository-defaults"
+
       - name: Validate repository name
         id: validate_name
         env:
