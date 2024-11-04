@@ -66,6 +66,7 @@ jobs:
         run: |
           if [[ "${{ github.event.inputs.license_template }}" != "none" ]]; then
             response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/licenses/${{ github.event.inputs.license_template }})
+            echo $response
             if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
               echo "Error: Invalid license template."
               exit 1
