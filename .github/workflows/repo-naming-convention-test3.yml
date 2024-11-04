@@ -56,11 +56,6 @@ jobs:
   validate-and-create-repo:
     runs-on: ubuntu-latest
     steps:
-      - name: Display Branch Information
-        run: |
-          echo "This will set 'main' as the default branch for the new repository."
-          echo "To change the default branch name, update it in RepoNamingConventionDemo's settings: https://github.com/organizations/RepoNamingConventionDemo/settings/repository-defaults"
-
       - name: Validate repository name
         id: validate_name
         env:
@@ -116,8 +111,8 @@ jobs:
               description: $description,
               private: $private,
               auto_init: $auto_init,
-              license_template: ($license_template != "None" ? $license_template : null),
-              gitignore_template: ($gitignore_template != "None" ? $gitignore_template : null)
+              license_template: ($license_template == "None" ? null : $license_template),
+              gitignore_template: ($gitignore_template == "None" ? null : $gitignore_template)
             }')
 
           # Send the request to create the repository
