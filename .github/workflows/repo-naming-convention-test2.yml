@@ -1,0 +1,159 @@
+name: Create or Import Repository in Organization
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Specify whether to create a new repository or import an existing one.'
+        required: true
+        default: 'create'
+        options:
+          - create
+          - import
+      repo_name:
+        description: 'Name of the repository to create or import'
+        required: true
+      description:
+        description: 'Description of the repository'
+        required: false
+      private:
+        description: 'Set repository as private (true or false)'
+        required: true
+        default: 'true'
+      add_readme:
+        description: 'Add a README file (true or false)'
+        required: false
+        default: 'false'
+      license_template:
+        description: 'License template for the repository'
+        required: false
+        default: ''
+        options:
+          - mit
+          - apache-2.0
+          - gpl-3.0
+          - none
+      gitignore_template:
+        description: 'Gitignore template for the repository'
+        required: false
+        default: ''
+        options:
+          - Node
+          - Python
+          - Java
+          - C#
+          - none
+      import_url:
+        description: 'URL of the repository to import (only required if action is import)'
+        required: false
+
+jobs:
+  validate-and-create-or-import-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate action
+        id: validate_action
+        run: |
+          if [[ "${{ github.event.inputs.action }}" != "create" && "${{ github.event.inputs.action }}" != "import" ]]; then
+            echo "Error: Invalid action specified. Use 'create' or 'import'."
+            exit 1
+          fi
+          echo "Action is valid."
+
+      - name: Validate repository name
+        id: validate_name
+        if: steps.validate_action.outcome == 'success' && github.event.inputs.action == 'create'
+        env:
+          REPO_PREFIX: ${{ vars.REPO_PREFIX }}
+        run: |
+          if [[ "${{ github.event.inputs.repo_name }}" != "${REPO_PREFIX}"* ]]; then
+            echo "Error: Repository name must start with '${REPO_PREFIX}'."
+            exit 1
+          fi
+          echo "Repository name is valid."
+
+      - name: Validate import repository name
+        id: validate_import_name
+        if: steps.validate_action.outcome == 'success' && github.event.inputs.action == 'import'
+        run: |
+          if [[ -z "${{ github.event.inputs.repo_name }}" ]]; then
+            echo "Error: Repository name is required for importing."
+            exit 1
+          fi
+          echo "Import repository name is provided."
+
+      - name: Validate import URL
+        id: validate_import_url
+        if: steps.validate_import_name.outcome == 'success' && github.event.inputs.action == 'import'
+        run: |
+          response=$(curl -s -H "Accept: application/vnd.github+json" "${{ github.event.inputs.import_url }}")
+          if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+            echo "Error: Invalid import URL or repository not found."
+            exit 1
+          fi
+          echo "Import URL is valid."
+
+      - name: Validate license template
+        id: validate_license
+        if: steps.validate_name.outcome == 'success' && github.event.inputs.action == 'create'
+        run: |
+          if [[ -n "${{ github.event.inputs.license_template }}" ]]; then
+            response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/licenses/${{ github.event.inputs.license_template }})
+            if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+              echo "Error: Invalid license template."
+              exit 1
+            fi
+          fi
+          echo "License template is valid or not provided."
+
+      - name: Validate gitignore template
+        id: validate_gitignore
+        if: steps.validate_license.outcome == 'success' && github.event.inputs.action == 'create'
+        run: |
+          if [[ -n "${{ github.event.inputs.gitignore_template }}" ]]; then
+            response=$(curl -s -H "Accept: application/vnd.github+json" https://api.github.com/gitignore/templates/${{ github.event.inputs.gitignore_template }})
+            if echo "$response" | jq -e '.message' | grep -q 'Not Found'; then
+              echo "Error: Invalid gitignore template."
+              exit 1
+            fi
+          fi
+          echo "Gitignore template is valid or not provided."
+
+      - name: Create repository
+        if: steps.validate_gitignore.outcome == 'success' && github.event.inputs.action == 'create'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          # Prepare the JSON payload
+          payload=$(jq -n \
+            --arg name "${{ github.event.inputs.repo_name }}" \
+            --arg description "${{ github.event.inputs.description }}" \
+            --argjson private "${{ github.event.inputs.private }}" \
+            --argjson auto_init "${{ github.event.inputs.add_readme }}" \
+            --arg license_template "${{ github.event.inputs.license_template }}" \
+            --arg gitignore_template "${{ github.event.inputs.gitignore_template }}" \
+            '{name: $name, description: $description, private: $private, auto_init: $auto_init, license_template: $license_template, gitignore_template: $gitignore_template}')
+
+          # Send the request to create the repository
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/${{ vars.ORG_NAME }}/repos \
+            -d "$payload"
+
+      - name: Import repository
+        if: github.event.inputs.action == 'import'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          import_payload=$(jq -n \
+            --arg name "${{ github.event.inputs.repo_name }}" \
+            --arg import_url "${{ github.event.inputs.import_url }}" \
+            '{name: $name, import_url: $import_url}')
+          
+          # Send the request to import the repository
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/${{ vars.ORG_NAME }}/repos/import \
+            -d "$import_payload"
