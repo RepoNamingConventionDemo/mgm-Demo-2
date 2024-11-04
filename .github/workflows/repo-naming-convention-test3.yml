@@ -16,14 +16,14 @@ on:
       add_readme:
         description: 'Add a README file (true or false)'
         required: false
-        default: 'false'
+        type: choice
         options:
           - true
           - false
       license_template:
         description: 'License template for the repository'
         required: false
-        default: 'none'
+        type: choice
         options:
           - mit
           - apache-2.0
@@ -32,7 +32,7 @@ on:
       gitignore_template:
         description: 'Gitignore template for the repository'
         required: false
-        default: 'none'
+        type: choice
         options:
           - Node
           - Python
