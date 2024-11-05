@@ -36,21 +36,64 @@ on:
         options:
           - mit
           - apache-2.0
+          - gpl-2.0
           - gpl-3.0
+          - lgpl-2.1
+          - lgpl-3.0
+          - mpl-2.0
+          - unlicense
+          - agpl-3.0
+          - bsd-2-clause
+          - bsd-3-clause
+          - cc0-1.0
+          - epl-2.0
+          - artistic-2.0
+          - cc-by-4.0
+          - isc
+          - zlib
           - None
       gitignore_template:
         description: |
-          'Gitignore template for the repository. 
+          Gitignore template for the repository. 
           Select a language or framework-specific gitignore template, or choose "None" for no template. 
-          Choose which files not to track from a list of templates. Learn more about ignoring files: https://docs.github.com/github/using-git/ignoring-files'
+          Choose which files not to track from a list of templates. Learn more about ignoring files: https://docs.github.com/github/using-git/ignoring-files
         required: false
         type: choice
         options:
-          - Node
-          - Python
-          - Java
-          - C#
           - None
+          - Actionscript
+          - Android
+          - C
+          - C++
+          - C#
+          - CMake
+          - CUDA
+          - Django
+          - Docker
+          - Go
+          - Java
+          - Javascript
+          - Jekyll
+          - Kotlin
+          - Laravel
+          - LaTeX
+          - Node
+          - Objective-C
+          - Perl
+          - Python
+          - Ruby
+          - Rust
+          - Swift
+          - Unity
+          - UnrealEngine
+          - VisualStudio
+          - Windows
+      branch_info:
+        description: |
+          This will set "main" as the default branch for the new repository. 
+          To change the default branch name, update it in Organizations settings.
+        required: false
+        default: "Informational only" 
 
 jobs:
   validate-and-create-repo:
