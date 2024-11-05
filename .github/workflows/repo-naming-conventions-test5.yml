@@ -99,9 +99,9 @@ on:
         type: choice
         options:
           - None
-          - RepoNamingConventionDemo/mgm-abcd
-          - RepoNamingConventionDemo/mgm-gone
-          - RepoNamingConventionDemo/mgm-fac
+          - mgm-abcd
+          - mgm-gone
+          - mgm-fac
       branch_info:
         description: |
           This will set "main" as the default branch for the new repository. 
@@ -151,6 +151,7 @@ jobs:
           curl -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/${{ vars.ORG_NAME }}/${{ github.event.inputs.repository_template }}/generate \
             -d "$payload"
 
