@@ -18,9 +18,9 @@ on:
           - false
       add_readme:
         description: |
-          'Add a README file (true or false). 
+          Add a README file (true or false). 
           If true, a README file will be initialized in the repository. 
-          This is where you can write a long description for your project. Learn more about READMEs: https://docs.github.com/github/creating-cloning-and-archiving-repositories/about-readmes'
+          This is where you can write a long description for your project. Learn more about READMEs: https://docs.github.com/github/creating-cloning-and-archiving-repositories/about-readmes
         required: false
         type: choice
         options:
@@ -28,16 +28,16 @@ on:
           - false
       license_template:
         description: |
-          'License template for the repository. 
+          License template for the repository. 
           Select a license or choose "None" for no license. 
-          A license tells others what they can and can't do with your code. Learn more about licenses: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository'
+          A license tells others what they can and can't do with your code. Learn more about licenses: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository
         required: false
         type: choice
         options:
           - mit
           - apache-2.0
           - gpl-3.0
-          - None
+          - '' 
       gitignore_template:
         description: |
           'Gitignore template for the repository. 
@@ -50,7 +50,7 @@ on:
           - Python
           - Java
           - C#
-          - None
+          - ''
 
 jobs:
   validate-and-create-repo:
