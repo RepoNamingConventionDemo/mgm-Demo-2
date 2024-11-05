@@ -37,7 +37,7 @@ on:
           - mit
           - apache-2.0
           - gpl-3.0
-          - '' 
+          - None
       gitignore_template:
         description: |
           'Gitignore template for the repository. 
@@ -50,7 +50,7 @@ on:
           - Python
           - Java
           - C#
-          - ''
+          - None
 
 jobs:
   validate-and-create-repo:
@@ -77,7 +77,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
-          # Prepare the JSON payload
+          # Build JSON payload conditionally, excluding "None" values
           payload=$(jq -n \
             --arg name "${{ github.event.inputs.repo_name }}" \
             --arg description "${{ github.event.inputs.description }}" \
@@ -85,7 +85,14 @@ jobs:
             --argjson auto_init "${{ github.event.inputs.add_readme }}" \
             --arg license_template "${{ github.event.inputs.license_template }}" \
             --arg gitignore_template "${{ github.event.inputs.gitignore_template }}" \
-           )
+            '{
+              name: $name,
+              description: $description,
+              private: $private,
+              auto_init: $auto_init
+            }
+            + if $license_template != "None" then { license_template: $license_template } else {} end
+            + if $gitignore_template != "None" then { gitignore_template: $gitignore_template } else {} end')
 
           # Send the request to create the repository
           curl -X POST \
