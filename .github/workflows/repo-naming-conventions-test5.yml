@@ -1,0 +1,191 @@
+name: Create Repository Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        description: 'Name of the repository to create. Must start with the specified prefix (mgm-)'
+        required: true
+      description:
+        description: 'Description of the repository'
+        required: false
+      private:
+        description: |
+          Set repository as private (true or false)
+          If true, the repository will be private
+          If false, the repository will be public
+        required: true
+        type: choice
+        options:
+          - true
+          - false
+      add_readme:
+        description: |
+          Add a README file (true or false). 
+          If true, a README file will be initialized in the repository. 
+          This is where you can write a long description for your project. Learn more about READMEs: https://docs.github.com/github/creating-cloning-and-archiving-repositories/about-readmes
+        required: false
+        type: choice
+        options:
+          - true
+          - false
+      license_template:
+        description: |
+          License template for the repository. 
+          Select a license or choose "None" for no license. 
+          A license tells others what they can and can't do with your code. Learn more about licenses: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository
+        required: false
+        type: choice
+        options:
+          - None
+          - mit
+          - apache-2.0
+          - gpl-2.0
+          - gpl-3.0
+          - lgpl-2.1
+          - lgpl-3.0
+          - mpl-2.0
+          - unlicense
+          - agpl-3.0
+          - bsd-2-clause
+          - bsd-3-clause
+          - cc0-1.0
+          - epl-2.0
+          - artistic-2.0
+          - cc-by-4.0
+          - isc
+          - zlib         
+      gitignore_template:
+        description: |
+          Gitignore template for the repository. 
+          Select a language or framework-specific gitignore template, or choose "None" for no template. 
+          Choose which files not to track from a list of templates. Learn more about ignoring files: https://docs.github.com/github/using-git/ignoring-files
+        required: false
+        type: choice
+        options:
+          - None
+          - Actionscript
+          - Android
+          - C
+          - C++
+          - C#
+          - CMake
+          - CUDA
+          - Django
+          - Docker
+          - Go
+          - Java
+          - Javascript
+          - Jekyll
+          - Kotlin
+          - Laravel
+          - LaTeX
+          - Node
+          - Objective-C
+          - Perl
+          - Python
+          - Ruby
+          - Rust
+          - Swift
+          - Unity
+          - UnrealEngine
+          - VisualStudio
+          - Windows
+      repository_template:
+        description: |
+          Repository template to use when creating the new repository. 
+          Select a template or choose "None" for no template.
+        required: false
+        type: choice
+        options:
+          - None
+          - RepoNamingConventionDemo/mgm-abcd
+          - RepoNamingConventionDemo/mgm-fac
+          - RepoNamingConventionDemo/mgm-gone
+      branch_info:
+        description: |
+          This will set "main" as the default branch for the new repository. 
+          To change the default branch name, update it in Organizations settings.
+        required: false
+        default: "Informational only" 
+
+jobs:
+  validate-and-create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Validate repository name
+        id: validate_name
+        env:
+          REPO_PREFIX: ${{ vars.REPO_PREFIX }}
+        run: |
+          if [[ "${{ github.event.inputs.repo_name }}" != "${REPO_PREFIX}"* ]]; then
+            echo "Error: Repository name must start with '${REPO_PREFIX}'."
+            exit 1
+          fi
+          echo "Repository name is valid."
+    
+      - name: Create repository from template if specified
+        if: steps.validate_name.outcome == 'success' && github.event.inputs.repository_template != 'None'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          template_owner="YOUR_ORG" # Replace with the org or user that owns the template
+          template_repo="${{ github.event.inputs.repository_template }}"
+
+          # Build JSON payload
+          payload=$(jq -n \
+            --arg name "${{ github.event.inputs.repo_name }}" \
+            --arg description "${{ github.event.inputs.description }}" \
+            --argjson private "${{ github.event.inputs.private }}" \
+            '{
+              owner: $template_owner,
+              name: $name,
+              description: $description,
+              private: $private
+            }')
+
+          # Send the request to create repository from template
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/$template_owner/$template_repo/generate \
+            -d "$payload"
+
+      - name: Create repository without template
+        if: steps.validate_name.outcome == 'success' && github.event.inputs.repository_template == 'None'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
+        run: |
+          # Build JSON payload conditionally
+          payload=$(jq -n \
+            --arg name "${{ github.event.inputs.repo_name }}" \
+            --arg description "${{ github.event.inputs.description }}" \
+            --argjson private "${{ github.event.inputs.private }}" \
+            --argjson auto_init "${{ github.event.inputs.add_readme }}" \
+            --arg license_template "${{ github.event.inputs.license_template }}" \
+            --arg gitignore_template "${{ github.event.inputs.gitignore_template }}" \
+            '{
+              name: $name,
+              description: $description,
+              private: $private,
+              auto_init: $auto_init
+            }
+            + if $license_template != "None" then { license_template: $license_template } else {} end
+            + if $gitignore_template != "None" then { gitignore_template: $gitignore_template } else {} end')
+
+          # Send the request to create repository without template
+          curl -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/orgs/${{ vars.ORG_NAME }}/repos \
+            -d "$payload"
+            
+      - name: Display creation message
+        if: steps.validate_name.outcome == 'success'
+        run: |
+             echo "The repository '${{ github.event.inputs.repo_name }}' has been successfully created and follows the naming conventions."
