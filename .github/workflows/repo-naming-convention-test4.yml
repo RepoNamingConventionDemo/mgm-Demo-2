@@ -73,7 +73,7 @@ jobs:
           echo "Repository name is valid."
     
       - name: Create repository
-        if: steps.validate_gitignore.outcome == 'success'
+        if: steps.validate_name.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
