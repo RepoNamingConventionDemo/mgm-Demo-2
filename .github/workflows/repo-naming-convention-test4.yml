@@ -146,3 +146,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/orgs/${{ vars.ORG_NAME }}/repos \
             -d "$payload"
+      - name: Display creation message
+        if: steps.validate_name.outcome == 'success'
+        run: |
+             echo "The repository '${{ github.event.inputs.repo_name }}' has been successfully created and follows the naming conventions." 
