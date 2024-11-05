@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       repo_name:
-        description: 'Name of the repository to create. Must start with the specified prefix.'
+        description: 'Name of the repository to create. Must start with the specified prefix (mgm-)'
         required: true
       description:
         description: 'Description of the repository'
