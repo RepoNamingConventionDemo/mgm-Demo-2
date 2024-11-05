@@ -1,4 +1,4 @@
-name: Create Repository or create form template
+name: Create Repository Test
 
 on:
   workflow_dispatch:
@@ -67,7 +67,7 @@ on:
           - Actionscript
           - Android
           - C
-          - C++
+          - C++ 
           - C#
           - CMake
           - CUDA
@@ -100,14 +100,14 @@ on:
         options:
           - None
           - RepoNamingConventionDemo/mgm-abcd
-          - RepoNamingConventionDemo/mgm-fac
           - RepoNamingConventionDemo/mgm-gone
+          - RepoNamingConventionDemo/mgm-fac
       branch_info:
         description: |
           This will set "main" as the default branch for the new repository. 
           To change the default branch name, update it in Organizations settings.
         required: false
-        default: "Informational only" 
+        default: "Informational only"
 
 jobs:
   validate-and-create-repo:
@@ -134,16 +134,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
-          template_owner="${{ vars.ORG_NAME }}"
-          template_repo="${{ github.event.inputs.repository_template }}"
-
-          # Build JSON payload
+          # Use the ORG_NAME variable directly in the jq command
           payload=$(jq -n \
+            --arg owner "${{ vars.ORG_NAME }}" \
             --arg name "${{ github.event.inputs.repo_name }}" \
             --arg description "${{ github.event.inputs.description }}" \
             --argjson private "${{ github.event.inputs.private }}" \
             '{
-              owner: $template_owner,
+              owner: $owner,
               name: $name,
               description: $description,
               private: $private
@@ -153,15 +151,15 @@ jobs:
           curl -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/$template_owner/$template_repo/generate \
+            https://api.github.com/repos/${{ vars.ORG_NAME }}/${{ github.event.inputs.repository_template }}/generate \
             -d "$payload"
 
-      - name: Create repository without template
+      - name: Create repository if no template specified
         if: steps.validate_name.outcome == 'success' && github.event.inputs.repository_template == 'None'
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         run: |
-          # Build JSON payload conditionally
+          # Build JSON payload conditionally, excluding "None" values
           payload=$(jq -n \
             --arg name "${{ github.event.inputs.repo_name }}" \
             --arg description "${{ github.event.inputs.description }}" \
@@ -178,13 +176,13 @@ jobs:
             + if $license_template != "None" then { license_template: $license_template } else {} end
             + if $gitignore_template != "None" then { gitignore_template: $gitignore_template } else {} end')
 
-          # Send the request to create repository without template
+          # Send the request to create the repository
           curl -X POST \
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/orgs/${{ vars.ORG_NAME }}/repos \
             -d "$payload"
-            
+
       - name: Display creation message
         if: steps.validate_name.outcome == 'success'
         run: |
