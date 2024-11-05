@@ -1,4 +1,4 @@
-name: Create Repository Test
+name: Create Repository or create form template
 
 on:
   workflow_dispatch:
