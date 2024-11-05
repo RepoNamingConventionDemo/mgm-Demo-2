@@ -10,7 +10,10 @@ on:
         description: 'Description of the repository'
         required: false
       private:
-        description: 'Set repository as private (true or false)'
+        description: |
+          Set repository as private (true or false)
+          If true, the repository will be private
+          If false, the repository will be public
         required: true
         type: choice
         options:
@@ -34,6 +37,7 @@ on:
         required: false
         type: choice
         options:
+          - None
           - mit
           - apache-2.0
           - gpl-2.0
@@ -50,8 +54,7 @@ on:
           - artistic-2.0
           - cc-by-4.0
           - isc
-          - zlib
-          - None
+          - zlib         
       gitignore_template:
         description: |
           Gitignore template for the repository. 
